@@ -8,156 +8,232 @@ Roadmap
 - [COMPLETE] Play multiple tracks at once
 - Equalizer
 - Save tracks after completing
+
+Style
+- CAPITAL and _ for elements and context
+- _CTX for contexts
+- camelCase for values
+- clr short for color
 */
 
 /*Audio Variables*/
-var AudioContext        = window.AudioContext || window.webkitAudioContext
-var audioContext        = new AudioContext()
-var tracks              = []
-var playing             = false
+const AudioContext      = window.AudioContext || window.webkitAudioContext
+const AUDIO_CTX         = new AudioContext()
 
-/*Canvas Variables*/
-var audioManager        = document.getElementById('droparea')
-var audioData           = document.getElementById('audio-data')
-var trackData           = document.getElementById('track-data')
-var timescale           = document.getElementById('timescale')
-var overlay             = document.getElementById('overlay')
-var dpr                 = window.devicePixelRatio
-var colors              = ['#ff9645','#66ccff','#6bffa1','#bd6ffc']
-var colorsLen           = 3
-var defColor            = 0
-
-/*Timescale Variable*/
-var timescaleCtx        = timescale.getContext('2d')
-var overlayCtx          = overlay.getContext('2d')
-var pixelPerSec         = 3
-var smGridClr           = '#292929'
-var mnGridClr           = '#3d3d3d'
-var progressClr         = '#5c0108'
-var targetClr           = '#ababab'
-var timerInterval
-var startTime
-var curTime
-
-/*Playback Variables*/
-var playBtn             = document.getElementById('play-btn')
+/*Main Document Elements*/
+const AUDIO_MANAGER_DIV = document.getElementById('droparea')
+const TRACK_DATA_DIV    = document.getElementById('track-data')
+const ROW_DATA_DIV      = document.getElementById('row-data')
+const TIMESCALE_CANVAS  = document.getElementById('timescale')
+const OVERLAY_CANVAS    = document.getElementById('overlay')
 
 /*Add Event Listeners*/
-audioManager.addEventListener('drop',dropHandler,false)
-audioManager.addEventListener('dragover',dragOverHandler,false)
-overlay.addEventListener('mousemove',mouseMoveHandler,false)
-overlay.addEventListener('mouseleave',mouseLeaveHandler,false)
-overlay.addEventListener('click',clickHandler,false)
+AUDIO_MANAGER_DIV.addEventListener('drop',fileHandler,false)
+AUDIO_MANAGER_DIV.addEventListener('dragover',dragOverHandler,false)
+OVERLAY_CANVAS.addEventListener('mousemove',cursorMoveHandler,false)
+OVERLAY_CANVAS.addEventListener('mouseleave',cursorLeaveHandler,false)
+OVERLAY_CANVAS.addEventListener('click',cursorSetHandler,false)
 window.addEventListener('resize',resizeHandler,false)
-playBtn.addEventListener('click',playHandler,false)
+window.addEventListener('keydown',playHandler,false)
+
+/*Global Constants*/
+const PIXEL_PER_SEC     = 3
+const GRAPH_SIZE        = 60
+
+
+
+/*Timescale Variables*/
+const TS = {
+    TIMESCALE_CTX:      TIMESCALE_CANVAS.getContext('2d'),
+    SM_GRID_COLOR:      '#292929',
+    MD_GRID_COLOR:      '#3d3d3d',
+    SM_GRID_FREQ:       5,
+    MD_GRID_FREQ:       6,
+    SM_GRID_W:          0.5,
+    MD_GRID_W:          1,
+}
+TS.drawTimeScale = function(){
+    let width           = TIMESCALE_CANVAS.clientWidth
+    let height          = TIMESCALE_CANVAS.clientHeight
+    let length          = width/(PIXEL_PER_SEC*this.SM_GRID_FREQ)
+
+    for (let i = 0; i<= length; i++){
+        let x = i*PIXEL_PER_SEC*this.SM_GRID_FREQ
+        if (i%this.MD_GRID_FREQ == 0){
+            drawLine(this.TIMESCALE_CTX,this.MD_GRID_W,height,this.MD_GRID_COLOR,x)
+        }
+        else {
+            drawLine(this.TIMESCALE_CTX,this.SM_GRID_W,height,this.SM_GRID_COLOR,x)
+        }
+    }
+}
+TS.calibrate = function(seconds){
+    calibrateCanvas(TIMESCALE_CANVAS,this.TIMESCALE_CTX)
+    this.drawTimeScale()
+}
+
+
+
+/*Clock Variables*/
+CK = {
+    OVERLAY_CTX:        OVERLAY_CANVAS.getContext('2d'),
+    PLAYING:            false,
+    CURRENT_TIME:       0,
+    START_TIME:         0,
+    REF_TIME:           0,
+    TIMER_INTERVAL:     '',
+    CURSOR_ON:          false,
+    CURSOR_POS:         0,
+    CURSOR_COLOR:       '#ababab',
+    PROGRESS_COLOR:     '#a80202'
+}
+CK.drawGuideLines = function(){
+    let width           = OVERLAY_CANVAS.clientWidth
+    let height          = OVERLAY_CANVAS.clientHeight
+
+    this.OVERLAY_CTX.clearRect(0,0,width,height)
+    drawLine(this.OVERLAY_CTX,1,height,this.PROGRESS_COLOR,this.CURRENT_TIME*PIXEL_PER_SEC)
+
+    if (this.CURSOR_ON){
+        drawLine(this.OVERLAY_CTX,1,height,this.CURSOR_COLOR,this.CURSOR_POS)
+    }
+}
+CK.startClock = function(){
+    this.PLAYING        = true
+    this.REF_TIME       = Date.now()
+    this.CURRENT_TIME   = this.START_TIME
+    this.TIMER_INTERVAL = setInterval(this.updateClock.bind(CK),10)
+}
+CK.updateClock = function(){
+    this.CURRENT_TIME   = (Date.now() - this.REF_TIME)/1000 + this.START_TIME
+    this.drawGuideLines()
+}
+CK.stopClock = function(){
+    this.PLAYING        = false
+    this.START_TIME     = this.CURRENT_TIME
+    this.drawGuideLines()
+    clearInterval(this.TIMER_INTERVAL)
+}
+CK.calibrate = function(){
+    calibrateCanvas(OVERLAY_CANVAS,this.OVERLAY_CTX)
+    this.drawGuideLines()
+}
+
+
+
+/*Row Variables*/
+const RD = {
+    ROWS:               [],
+    ROW_COLORS:         ['#ff9645','#66ccff','#6bffa1','#bd6ffc']
+}
+RD.startRows = function(startTime){
+    for (let row of this.ROWS){
+        row.startTracks(startTime)
+    }
+}
+RD.stopRows = function(){
+    for (let row of this.ROWS){
+        row.stopTracks()
+    }
+}
+RD.calibrateRows = function(){
+    for (let row of this.ROWS){
+        row.calibrateTracks()
+    }
+}
 
 
 
 /*File Drop Handlers*/
-function dropHandler(e){
+async function fileHandler(e){
     e.preventDefault()
-    var data = e.dataTransfer.files
-    var file = data[0]
+    let file = e.dataTransfer.files[0]
     if (file.type == 'audio/mpeg'){
-        if (defColor > colorsLen){
-            defColor = 0
-        }
-        tracks.push(new Track(file,audioContext,trackData,audioData,colors[defColor]))
-        defColor ++
+        let rowColor    = RD.ROW_COLORS[RD.ROWS.length%RD.ROW_COLORS.length]
+        let newRow      = createRow(rowColor)
+        let newTrack    = await createTrack(file)
+        newRow.addTrack(newTrack)
+        RD.ROWS.push(newRow)
     }
 }
 function dragOverHandler(e){
     e.preventDefault()
 }
 
-/*Audio Data Handlers*/
-function mouseMoveHandler(e){
-    let rect = e.target.getBoundingClientRect()
-    drawTargetLine(e.clientX-rect.left)
+
+/*Cursor Handlers*/
+function cursorMoveHandler(e){
+    let rect            = e.target.getBoundingClientRect()
+    CK.CURSOR_ON        = true
+    CK.CURSOR_POS       = e.clientX-rect.left
+    CK.drawGuideLines()
 }
-function mouseLeaveHandler(e){
-    if (!playing){
-        overlayCtx.clearRect(0,0,overlay.clientWidth,overlay.clientHeight)
+function cursorLeaveHandler(e){
+    CK.CURSOR_ON        = false
+    CK.drawGuideLines()
+}
+function cursorSetHandler(e){
+    if (e.button === 0){
+        CK.CURRENT_TIME = CK.CURSOR_POS/PIXEL_PER_SEC
+        CK.START_TIME   = CK.CURRENT_TIME
+        CK.drawGuideLines()
+        if (CK.PLAYING){
+            playHandler()
+            playHandler()
+        }
     }
 }
-function clickHandler(e){
-    let rect = e.target.getBoundingClientRect()
-}
-function resizeHandler(e){
-    calibrateCanvas(timescale,timescaleCtx)
-    calibrateCanvas(overlay,overlayCtx)
-    drawGrid()
-    for (let track of tracks){
-        calibrateCanvas(track.graph,track.ctx)
-        track.ctx.translate(0,40)
-        track.drawGraph()
-    }
-}
+
 
 /*Playback Handlers*/
-function playHandler(e){
-    if (playing){
-        for (let track of tracks){
-            track.pauseTrack()
-            clearInterval(timerInterval)
-        }
+function playHandler(){
+    if (!CK.PLAYING){
+        CK.startClock()
+        RD.startRows(CK.START_TIME)
     }
     else {
-        playing = true
-        for (let track of tracks){
-            startTimer()
-            track.playTrack()
-        }
+        CK.stopClock()
+        RD.stopRows()
     }
 }
 
 
-
-/*Timescale Functions*/
-function startTimer(){
-    startTime = Date.now()
-    curTime = 0
-    timerInterval = setInterval(updateTimer,100)
-}
-function updateTimer(){
-    curTime = Date.now() - startTime
-    drawProgressLine(curTime/1000)
-}
-function drawGrid(){
-    let length = timescale.clientWidth/(pixelPerSec*5)
-    for (let i = 0; i<= length;i++){
-        if (i%6 == 0){
-            drawLine(timescaleCtx,1,timescale.clientHeight,mnGridClr,i*pixelPerSec*5)
-        }
-        else {
-            drawLine(timescaleCtx,0.5,timescale.clientHeight,smGridClr,i*pixelPerSec*5)
-        }
-    }
-}
-function drawProgressLine(s){
-    overlayCtx.clearRect(0,0,overlay.clientWidth,overlay.clientHeight)
-    drawLine(overlayCtx,1,overlay.clientHeight,progressClr,s*pixelPerSec)
-}
-function drawTargetLine(x){
-    overlayCtx.clearRect(0,0,overlay.clientWidth,overlay.clientHeight)
-    drawLine(overlayCtx,1,overlay.clientHeight,targetClr,x)
+/*Canvas Handlers*/
+function resizeHandler(e){
+    TS.calibrate()
+    RD.calibrateRows()
 }
 
-/*Canvas Functions*/
+
+/*Universal Functions*/
 function calibrateCanvas(canvas,ctx){
-    canvas.width = canvas.clientWidth * dpr
-    canvas.height = canvas.clientHeight * dpr
+    let dpr             = window.devicePixelRatio
+    canvas.width        = canvas.clientWidth * dpr
+    canvas.height       = canvas.clientHeight * dpr
     ctx.scale(dpr,dpr)
 }
 function drawLine(ctx,width,length,color,x){
     ctx.beginPath()
-    ctx.lineWidth = width
-    ctx.strokeStyle = color
+    ctx.lineWidth       = width
+    ctx.strokeStyle     = color
     ctx.moveTo(x,0)
     ctx.lineTo(x,length)
     ctx.stroke()
 }
+async function createTrack(file){
+    let newTrack = new Track()
+    await newTrack.createAudioBuffer(file)
+    newTrack.createGraphData()
+    TRACK_DATA_DIV.appendChild(newTrack.createAudioGraph())
+    newTrack.calibrateGraph()
+    return newTrack
+}
 
-calibrateCanvas(timescale,timescaleCtx)
-calibrateCanvas(overlay,overlayCtx)
-drawGrid()
+function createRow(color){
+    let newRow = new Row(color)
+    ROW_DATA_DIV.appendChild(newRow.createRowControls())
+    return newRow
+}
+
+TS.calibrate()
+CK.calibrate()
