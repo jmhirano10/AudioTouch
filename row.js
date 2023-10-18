@@ -1,11 +1,10 @@
 class Row{
-    constructor(color,bgColor){
+    constructor(color){
         this.ROW_CONTROLS_DIV = document.createElement('div')
         this.ROW_DIV = document.createElement('div')
         this.GAIN_INPUT = document.createElement('input')
 
         this.color = color
-        this.bgColor = '#69330a'
         this.tracks = []
         this.gainNode = AUDIO_CTX.createGain()
 
@@ -23,6 +22,10 @@ class Row{
         this.ROW_CONTROLS_DIV.appendChild(this.GAIN_INPUT)
         return this.ROW_CONTROLS_DIV
     }
+    createRow(){
+        this.ROW_DIV.setAttribute('class','row')
+        return this.ROW_DIV
+    }
     startTracks(startTime){
         for (let track of this.tracks){
             track.startSourceNode(startTime)
@@ -34,16 +37,13 @@ class Row{
             track.createSourceNode(this.gainNode)
         }
     }
-    calibrateTracks(){
-        for (let track of this.tracks){
-            track.calibrateGraph()
-            track.drawGraph(this.color)
-        }
-    }
     addTrack(track){
-        track.createSourceNode(this.gainNode)
-        track.drawGraph(this.color,this.bgColor)
+        this.ROW_DIV.appendChild(track.GRAPH_DIV)
         this.tracks.push(track)
+        track.createEventListeners()
+        track.createSourceNode(this.gainNode)
+        track.calibrateGraph()
+        track.drawGraph(this.color)
     }
 
     createEventListeners(){
