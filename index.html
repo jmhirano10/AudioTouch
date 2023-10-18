@@ -4,12 +4,58 @@
         <title>Audio Modifier</title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
         <link href="style.css" rel="stylesheet">
-
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300&display=swap" rel="stylesheet">
     </head>
     <body>
         <div class="app-wrapper">
+            <div class="hot-bar">
+                <div class="dropdown">
+                    <div class="dropdown-label">
+                        <span>File</span>
+                    </div>
+                    <div class="dropdown-content">
+                        <div class="dropdown-item">
+                            Save
+                        </div>
+                        <div class="dropdown-item">
+                            Save As
+                        </div>
+                        <div class="dropdown-item">
+                            Export Audio
+                        </div>
+                    </div>
+                </div>
+                <div class="dropdown">
+                    <div class="dropdown-label">
+                        <span>Help</span>
+                    </div>
+                    <div class="dropdown-content">
+                        <div class="dropdown-item">
+                            Guide
+                        </div>
+                    </div>
+                </div>
+                <div class="dropdown">
+                    <div class="dropdown-label">
+                        <span>About</span>
+                    </div>
+                    <div class="dropdown-content">
+                        <div class="dropdown-item">
+                            <a href="https://github.com/jmhirano10">Github</a> 
+                        </div>
+                        <div class="dropdown-item">
+                            <a href="https://jmhirano10.github.io/">Other Projects</a> 
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="audio-control">
-                
+                <div class="clock">
+                    <span id="min">00</span>:<span id="sec">00</span>:<span id="mil">000</span>
+                </div>
             </div>
             
             <div id="droparea" class="audio-manager">
@@ -20,6 +66,7 @@
                     <canvas id="overlay" class="overlay"></canvas>
                 </div>
             </div>
+
             <div class="playback">
                 <div id="play-btn" class="play-btn">
                     <i class="bi bi-play-fill"></i>
