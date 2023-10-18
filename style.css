@@ -1,3 +1,12 @@
+:root {
+    --cntrl-bg-color: #1f1f1f;
+    --row-bg-color: #262626;
+    --row-cntrl-bg-color: #404040;
+    --ts-bg-color: #141414;
+    --shadow-color: #000000;
+    --text-color: #ff8800;
+}
+
 .app-wrapper {
     display: flex;
     flex-direction: column;
@@ -7,7 +16,9 @@
 
 /*Playback Controls*/
 .playback {
-    background-color: #1f1f1f;
+    background-color: var(--cntrl-bg-color);
+    box-shadow: 0px 0px 10px var(--shadow-color);
+    z-index: 3;
     width: 100%;
     height: 100px;
     display: flex;
@@ -22,38 +33,48 @@
 
 /*Audio Controls*/
 .audio-control {
-    background-color: #1f1f1f;
+    background-color: var(--cntrl-bg-color);
+    box-shadow: 0px 0px 10px var(--shadow-color);
+    z-index: 3;
     width: 100%;
     height: 100px;
-    box-shadow: 0px 0px 10px black;
-    z-index: 3;
 }
 
 /*Audio Manager*/
 .audio-manager {
-    background-color: #141414;
-    flex-grow: 1;
+    background-color: var(--ts-bg-color);
     width: 100%;
+    flex-grow: 1;
 }
+
+
 .row-data {
+    background-color: var(--row-bg-color);
+    box-shadow: 0px 0px 10px var(--shadow-color);
     width: 300px;
     height: 100%;
     float: left;
-    background-color: #262626;
     overflow: auto;
-    box-shadow: inset 0px 0px 10px black;
 }
 .row-controls {
+    background-color: var(--row-cntrl-bg-color);
     height: 80px;
-    background-color: #404040;
     justify-content: center;
     display: flex;
 }
+.row {
+    position: relative;
+    width: 100%;
+    height: 80px;
+}
+
+
 .track-data {
     margin-left: 300px;
     height: 100%;
 }
 .track {
+    position: absolute;
     height: 80px;
     border-radius: 0.2rem;
     overflow: hidden;
@@ -66,6 +87,8 @@
     object-fit: contain;
 }
 
+
+
 .timescale {
     position: absolute;
     z-index: 0;
@@ -73,11 +96,13 @@
     height: calc(100% - 200px);
 }
 .overlay {
+    pointer-events: none;
     position: absolute;
     z-index: 2;
     width: 100%;
     height: calc(100% - 200px);
 }
+
 
 /*Other*/
 html {
@@ -87,6 +112,6 @@ html {
 }
 body {
     margin: 0;
-    color: #d9d9d9;
+    color: var(--text-color);
     height: 100%;
 }
