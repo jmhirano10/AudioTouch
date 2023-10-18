@@ -76,6 +76,9 @@ TS.calibrate = function(seconds){
 
 /*Clock Variables*/
 CK = {
+    MILLI_SPAN:         document.getElementById('mil'),
+    SECONDS_SPAN:       document.getElementById('sec'),
+    MINUTES_SPAN:       document.getElementById('min'),
     OVERLAY_CTX:        OVERLAY_CANVAS.getContext('2d'),
     PLAYING:            false,
     CURRENT_TIME:       0,
@@ -106,6 +109,7 @@ CK.startClock = function(){
 }
 CK.updateClock = function(){
     this.CURRENT_TIME   = (Date.now() - this.REF_TIME)/1000 + this.START_TIME
+    this.setTime(this.CURRENT_TIME)
     this.drawGuideLines()
 }
 CK.stopClock = function(){
@@ -117,6 +121,17 @@ CK.stopClock = function(){
 CK.calibrate = function(){
     calibrateCanvas(OVERLAY_CANVAS,this.OVERLAY_CTX)
     this.drawGuideLines()
+}
+CK.setTime = function(time){
+    let min = Math.floor(time/60)
+    let sec = Math.floor(time-min*60)
+    let mil = Math.floor((time%1)*1000)
+    min = min.toString().padStart(2,'0')
+    sec = sec.toString().padStart(2,'0')
+    mil = mil.toString().padStart(3,'0')
+    CK.MINUTES_SPAN.innerHTML = min
+    CK.SECONDS_SPAN.innerHTML = sec
+    CK.MILLI_SPAN.innerHTML = mil
 }
 
 
@@ -170,6 +185,7 @@ function cursorSetHandler(e){
     if (e.button === 0){
         CK.CURRENT_TIME = CK.CURSOR_POS/PIXEL_PER_SEC
         CK.START_TIME   = CK.CURRENT_TIME
+        CK.setTime(CK.START_TIME)
         CK.drawGuideLines()
         if (CK.PLAYING){
             playHandler()
