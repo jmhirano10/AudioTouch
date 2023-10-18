@@ -4,7 +4,8 @@
     --row-cntrl-bg-color: #404040;
     --ts-bg-color: #141414;
     --shadow-color: #000000;
-    --text-color: #ff8800;
+    --text-color: #d4d4d4;
+    --main-font: 'Roboto Mono', monospace;
 }
 
 .app-wrapper {
@@ -12,6 +13,43 @@
     flex-direction: column;
     width: 100%;
     height: 100%;
+}
+
+/*Hotbar Controls*/
+.hot-bar {
+    background-color: var(--cntrl-bg-color);
+    box-shadow: 0px 0px 10px var(--shadow-color);
+    overflow: hidden;
+    z-index: 4;
+}
+.dropdown {
+    float: left;
+    overflow: hidden;
+}
+.dropdown-label {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 20px;
+    padding-right: 20px;
+    font-size: 15px;
+}
+.dropdown-content {
+    position: absolute;
+    background-color: var(--row-cntrl-bg-color);
+    min-width: 150px;
+    display: none;
+    border-radius: 0 0.4rem 0.4rem 0.4rem;
+}
+.dropdown-item {
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: 13px;
+}
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+.dropdown:hover .dropdown-label{
+    background-color: var(--row-cntrl-bg-color);
 }
 
 /*Playback Controls*/
@@ -38,6 +76,15 @@
     z-index: 3;
     width: 100%;
     height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.clock {
+    box-shadow: inset 0px 0px 5px var(--shadow-color);
+    padding: 10px;
+    border-radius: 0.4rem;
+    font-size: 25px;
 }
 
 /*Audio Manager*/
@@ -93,14 +140,14 @@
     position: absolute;
     z-index: 0;
     width: 100%;
-    height: calc(100% - 200px);
+    height: calc(100% - 230px);
 }
 .overlay {
     pointer-events: none;
     position: absolute;
     z-index: 2;
     width: 100%;
-    height: calc(100% - 200px);
+    height: calc(100% - 230px);
 }
 
 
@@ -112,6 +159,11 @@ html {
 }
 body {
     margin: 0;
+    font-family: var(--main-font);
     color: var(--text-color);
     height: 100%;
+}
+a {
+    text-decoration: none;
+    color: var(--text-color);
 }
