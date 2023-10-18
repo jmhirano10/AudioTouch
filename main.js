@@ -30,9 +30,9 @@ const OVERLAY_CANVAS    = document.getElementById('overlay')
 /*Add Event Listeners*/
 AUDIO_MANAGER_DIV.addEventListener('drop',fileHandler,false)
 AUDIO_MANAGER_DIV.addEventListener('dragover',dragOverHandler,false)
-OVERLAY_CANVAS.addEventListener('mousemove',cursorMoveHandler,false)
-OVERLAY_CANVAS.addEventListener('mouseleave',cursorLeaveHandler,false)
-OVERLAY_CANVAS.addEventListener('click',cursorSetHandler,false)
+TRACK_DATA_DIV.addEventListener('mousemove',cursorMoveHandler,false)
+TRACK_DATA_DIV.addEventListener('mouseleave',cursorLeaveHandler,false)
+TRACK_DATA_DIV.addEventListener('click',cursorSetHandler,false)
 window.addEventListener('resize',resizeHandler,false)
 window.addEventListener('keydown',playHandler,false)
 
@@ -136,12 +136,6 @@ RD.stopRows = function(){
         row.stopTracks()
     }
 }
-RD.calibrateRows = function(){
-    for (let row of this.ROWS){
-        row.calibrateTracks()
-    }
-}
-
 
 
 /*File Drop Handlers*/
@@ -163,7 +157,7 @@ function dragOverHandler(e){
 
 /*Cursor Handlers*/
 function cursorMoveHandler(e){
-    let rect            = e.target.getBoundingClientRect()
+    let rect            = OVERLAY_CANVAS.getBoundingClientRect()
     CK.CURSOR_ON        = true
     CK.CURSOR_POS       = e.clientX-rect.left
     CK.drawGuideLines()
@@ -196,12 +190,17 @@ function playHandler(){
         RD.stopRows()
     }
 }
-
+function pause(){
+    if (CK.PLAYING){
+        CK.stopClock()
+        RD.stopRows()
+    }
+}
 
 /*Canvas Handlers*/
 function resizeHandler(e){
     TS.calibrate()
-    RD.calibrateRows()
+    CK.calibrate()
 }
 
 
@@ -224,15 +223,18 @@ async function createTrack(file){
     let newTrack = new Track()
     await newTrack.createAudioBuffer(file)
     newTrack.createGraphData()
-    TRACK_DATA_DIV.appendChild(newTrack.createAudioGraph())
-    newTrack.calibrateGraph()
+    newTrack.createAudioGraph()
     return newTrack
 }
 
 function createRow(color){
     let newRow = new Row(color)
     ROW_DATA_DIV.appendChild(newRow.createRowControls())
+    TRACK_DATA_DIV.appendChild(newRow.createRow())
     return newRow
+}
+function test(){
+    console.log('WORKED')
 }
 
 TS.calibrate()
