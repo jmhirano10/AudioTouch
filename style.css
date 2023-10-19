@@ -8,6 +8,7 @@
     --main-font: 'Roboto Mono', monospace;
 }
 
+
 .app-wrapper {
     display: flex;
     flex-direction: column;
